@@ -19,7 +19,7 @@ namespace angular_portfolio.Services{
                 var lines = meh.Split("\r\r\n");
                 var usage = lines[1];
                 return Convert.ToInt32(usage);
-            }catch(Exception ex){
+            }catch(Exception){
                 return -1;
             }
             

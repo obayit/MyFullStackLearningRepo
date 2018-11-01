@@ -1,8 +1,21 @@
-<h2>{{percentage}}</h2>
+<h2>{{percentage}}%</h2>
+<h2 *ngIf="chartData.length">
+  <span *ngFor="let data of chartData[0].data">{{data}} </span>
+</h2>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
 
-<canvas id="myChart" ></canvas>
+<button (click)="toggle()" style="display: inline-block; width: 512; height: 512;">Toggle</button>
+<div *ngIf="chartData.length">
+  <canvas baseChart 
+  [chartType]="chartType" 
+  [datasets]="chartData"
+  [options]="chartOptions"
+  [colors]="chartColors"
+  >
+  </canvas>
+</div>
 
 <!-- continue from here https://github.com/jtblin/angular-chart.js/issues/677  -->
 

@@ -2,6 +2,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { HttpClientModule  } from '@angular/common/http'
 
+import {ChartsModule} from 'ng2-charts';
 import { AppComponent } from './app.component';
 import { CpuUsageComponent } from './cpu-usage/cpu-usage.component';
 
@@ -12,7 +13,8 @@ import { CpuUsageComponent } from './cpu-usage/cpu-usage.component';
   ],
   imports: [
     BrowserModule,
-    HttpClientModule
+    HttpClientModule,
+    ChartsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

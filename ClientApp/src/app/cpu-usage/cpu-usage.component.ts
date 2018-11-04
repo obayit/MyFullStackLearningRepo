@@ -1,12 +1,9 @@
 import { Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 
-import * as $ from 'jquery';
-import { debounceTime } from 'rxjs/operators';
-import * as asdflkj from 'chart.js';
-
+import { Observable, interval } from 'rxjs';
+import { switchMap, map, startWith, debounceTime } from 'rxjs/operators';
 
 import { PerfService } from '../perf.service'
-import { Observable } from 'rxjs';
 
 interface Option {
   label: string;
@@ -30,18 +27,27 @@ async function delay(ms: number) {
 export class CpuUsageComponent implements OnInit {
   public percentage: number;
   public cpuUsage: Observable<number[]>;
-  public cpuUpdateRateMs = 1000;
+  public counterUpdateRateMs = 5000;
+
+  @Input() counterUrl: string;
+  @Input() chartTitle: string;
 
   chartType = 'line';
-  chartData: LineChartData[]  = [];
-  chartLabels = [];
+  chartDataSize = 10;
+  chartData: LineChartData[];
+  chartLabels: Array<string>;
   chartOptions = {
     responsive: true,
     elements: {
         line: {
             tension: 0, // disables bezier curves
         }
-    }
+    },
+    animation: {
+      duration: 0,
+    },
+    layout: {
+    },
   };
   public chartColors:Array<any> = [
     { // grey
@@ -70,10 +76,9 @@ export class CpuUsageComponent implements OnInit {
     }
   ];
 
-  counter = 0;
 
-  @Input() censusData = {};
   @Output() newEntry: EventEmitter<Option> = new EventEmitter();
+  counterValue$: Observable<any>;
 
 
   constructor(
@@ -81,41 +86,43 @@ export class CpuUsageComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.getPercentage();
-  }
+    if(!this.counterUrl.trim()){
+      return;
+    }
 
-  getPercentage(){
-    this.perfService.getCpu().subscribe(
-      //percentage => this.data = [percentage, 100-percentage],
-      async(p) => {
-        this.percentage = p;
-
-        if(this.chartData.length>0){
-          var newData = this.chartData.slice();
-          var newInnerData = newData[0].data.slice();
-          newInnerData.push(p);
-          newData[0].data = newInnerData;
-          this.chartData = newData;
-        }else{
-          this.chartData = [{data: [p], label: 'CPU'} as LineChartData];
-        }
-
-        //{data: [65, 59, 80, 81, 56, 55, 40], label: 'Series A'},
-        await delay(this.cpuUpdateRateMs);
-
-        this.getPercentage();
-      }
+    this.chartLabels = new Array<string>(this.chartDataSize);
+    for(let i=0; i<this.chartLabels.length; i++){
+      this.chartLabels[i] = '' + (i+1);
+    }
+    this.counterValue$ = interval(this.counterUpdateRateMs).pipe(
+      switchMap(() => this.perfService.getCounter(this.counterUrl)),
+      map(i => this.updateChart(i)),
     );
+    this.counterValue$.subscribe(v => console.log(v));
   }
 
-  toggle(){
-    //this.chartType = this.chartType === 'doughnut' ? 'pie' : 'doughnut';
-    this.chartType = 'pie';
-  }
+  async updateChart(p: number){
+    console.log("calling updateChart with " + p);
+    this.percentage = p;
+    if(p > 0 && p <= 100){
 
-
-  drawCpuChart(){
-
+      if(this.chartData && this.chartData.length>0){
+        let _lineChartData:Array<any> = new Array(this.chartData.length);
+        for (let i = 0; i < this.chartData.length; i++) {
+          _lineChartData[i] = {data: new Array(this.chartData[i].data.length), label: this.chartData[i].label};
+          for (let j = 0; j < this.chartData[i].data.length - 1; j++) {
+            _lineChartData[i].data[j] = this.chartData[i].data[j+1];
+          }
+          _lineChartData[i].data[this.chartData[i].data.length-1] = p;
+        }
+        this.chartData = _lineChartData;
+      }else{
+        var innerData = new Array<number>(this.chartDataSize).fill(0);
+        innerData[this.chartDataSize - 1] = p;
+        this.chartData = [{data: innerData, label: this.chartTitle} as LineChartData];
+      }
+    }
+    //{data reference: [65, 59, 80, 81, 56, 55, 40], label: 'Series A'},
   }
 
 }

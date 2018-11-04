@@ -4,25 +4,56 @@ using System.Diagnostics;
 namespace angular_portfolio.Services{
     public interface IPerformanceService{
         int getCpuUsage();
+        int getMemoryUsage();
     }
     public class WinPerformanceService: IPerformanceService{
         public int getCpuUsage(){
-            var proc = Process.Start(new ProcessStartInfo(){
-                WindowStyle = ProcessWindowStyle.Hidden,
-                FileName = "cmd.exe",
-                RedirectStandardOutput = true,
-                Arguments = "/C wmic cpu get loadpercentage"
-            });
+            var proc = _runProcess("/C wmic cpu get loadpercentage");
             proc.WaitForExit();
-            var meh = proc.StandardOutput.ReadToEnd();
+            var output = proc.StandardOutput.ReadToEnd();
             try{
-                var lines = meh.Split("\r\r\n");
+                var lines = output.Split("\r\r\n");
                 var usage = lines[1];
                 return Convert.ToInt32(usage);
             }catch(Exception){
                 return -1;
             }
             
+        }
+        public int getMemoryUsage(){
+            var proc = _runProcess("/C wmic OS get FreePhysicalMemory /Value");
+            proc.WaitForExit();
+            var procTotal = _runProcess("/C wmic ComputerSystem get TotalPhysicalMemory");
+            procTotal.WaitForExit();
+            var output = proc.StandardOutput.ReadToEnd();
+            var outputTotal = procTotal.StandardOutput.ReadToEnd();
+            try{
+                Console.WriteLine($"\"{outputTotal}\"");
+                var totalMemory = Convert.ToInt64(
+                    outputTotal.Split("\r\r\n")[1].Trim()
+                );
+
+                Console.WriteLine($"\"{totalMemory}\"");
+                var freeMemory = Convert.ToInt64(
+                    output.Split("\r\r\n")[2]
+                    .Split('=')[1]
+                );
+
+                totalMemory = totalMemory/1024;
+                var usage = ((double)totalMemory - freeMemory) / (totalMemory + 0.0);
+                return  (int)Math.Round(usage * 100);
+            }catch(Exception){
+                return -1;
+            }
+        }
+
+        private Process _runProcess(string arguments){
+            return Process.Start(new ProcessStartInfo(){
+                WindowStyle = ProcessWindowStyle.Hidden,
+                FileName = "cmd.exe",
+                RedirectStandardOutput = true,
+                Arguments = arguments
+            });
         }
     }
 }

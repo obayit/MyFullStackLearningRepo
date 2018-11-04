@@ -20,5 +20,10 @@ namespace angular_portfolio.Controllers
         {
             return _performanceService.getCpuUsage();
         }
+        [HttpGet("[action]")]
+        public double memoryUsage()
+        {
+            return _performanceService.getMemoryUsage();
+        }
     }
 }

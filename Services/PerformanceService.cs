@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace angular_portfolio.Services{
     public interface IPerformanceService{
@@ -7,6 +8,13 @@ namespace angular_portfolio.Services{
         int getMemoryUsage();
     }
     public class WinPerformanceService: IPerformanceService{
+        private ILogger _logger { get; set; }
+
+        public WinPerformanceService(
+            ILogger<WinPerformanceService> logger
+        ){
+            _logger = logger;
+        }
         public int getCpuUsage(){
             var proc = _runProcess("/C wmic cpu get loadpercentage");
             proc.WaitForExit();
@@ -38,6 +46,8 @@ namespace angular_portfolio.Services{
                     output.Split("\r\r\n")[2]
                     .Split('=')[1]
                 );
+
+                _logger.LogTrace("Total Memory: {0}, Free Memory: {1}", totalMemory, freeMemory);
 
                 totalMemory = totalMemory/1024;
                 var usage = ((double)totalMemory - freeMemory) / (totalMemory + 0.0);

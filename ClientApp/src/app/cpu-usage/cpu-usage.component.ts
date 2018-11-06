@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 
 import { Observable, interval } from 'rxjs';
-import { switchMap, map, startWith, debounceTime } from 'rxjs/operators';
+import { switchMap, map, startWith, debounceTime, distinctUntilChanged, exhaustMap } from 'rxjs/operators';
 
 import { PerfService } from '../perf.service'
 
@@ -15,10 +15,6 @@ interface LineChartData {
   label: string;
 }
 
-async function delay(ms: number) {
-  return new Promise( resolve => setTimeout(resolve, ms) );
-}
-
 @Component({
   selector: 'app-cpu-usage',
   templateUrl: './cpu-usage.component.html',
@@ -27,7 +23,7 @@ async function delay(ms: number) {
 export class CpuUsageComponent implements OnInit {
   public percentage: number;
   public cpuUsage: Observable<number[]>;
-  public counterUpdateRateMs = 5000;
+  public counterUpdateRateMs = 2000;
 
   @Input() counterUrl: string;
   @Input() chartTitle: string;
@@ -47,6 +43,14 @@ export class CpuUsageComponent implements OnInit {
       duration: 0,
     },
     layout: {
+    },
+    scales: {
+      yAxes: [{
+          ticks: {
+              min: 0,
+              max: 100
+          }
+      }]
     },
   };
   public chartColors:Array<any> = [
@@ -95,13 +99,13 @@ export class CpuUsageComponent implements OnInit {
       this.chartLabels[i] = '' + (i+1);
     }
     this.counterValue$ = interval(this.counterUpdateRateMs).pipe(
-      switchMap(() => this.perfService.getCounter(this.counterUrl)),
+      exhaustMap(() => this.perfService.getCounter(this.counterUrl)),
       map(i => this.updateChart(i)),
     );
     this.counterValue$.subscribe(v => console.log(v));
   }
 
-  async updateChart(p: number){
+  updateChart(p: number){
     console.log("calling updateChart with " + p);
     this.percentage = p;
     if(p > 0 && p <= 100){

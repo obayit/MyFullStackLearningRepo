@@ -1,0 +1,22 @@
+<div>
+  <label>
+    Name: 
+    <input type="text" [formControl]="name"/>
+    <p class="bg-white">{{name.value}}</p>
+  </label>
+  <form [formGroup]="profileForm">
+    <p class="bg-white">Form Group</p>
+
+    <label>
+      First Name:
+      <input type="text" formControlName="firstName">
+    </label>
+
+    <label>
+      Last Name:
+      <input type="text" formControlName="lastName">
+    </label>
+
+  </form>
+
+</div>
